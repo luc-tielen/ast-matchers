@@ -17,7 +17,7 @@ const astToString = node => {
     case VALUE_TYPE:
       return node.value.toString();
     default:
-      throw new Error("Unsupported time!");
+      throw new Error("Unsupported type!");
   }
 };
 
@@ -42,45 +42,40 @@ const matchWithin = p => node => {
   }
 };
 
-const applyIfMatches = ({ matcher, transform }, node) =>
-  matcher(node) ? transform(node) : node;
+// Applying transforms
 
-const singleTraverseAST = handler => node => {
-  switch (node.type) {
-    case BINOP_TYPE:
-      const newA = singleTraverseAST(handler)(node.a);
-      const newB = singleTraverseAST(handler)(node.b);
-      const newOp =
-        newA === node.a && newB === node.b ? node : binOp(node.op)(newA, newB);
-      return applyIfMatches(handler, newOp);
-    case VALUE_TYPE:
-      return applyIfMatches(handler, node);
-    default:
-      throw new Error("Unsupported type!");
-  }
-};
+const applyIfMatches = (handler, node) => multiApplyIfMatches([handler], node);
 
-// TODO refactor
 const multiApplyIfMatches = (matchers, node) =>
   matchers.reduce(
     (acc, { matcher, transform }) => (matcher(acc) ? transform(acc) : acc),
     node
   );
 
-const traverseAST = handlers => node => {
+// Traversals
+
+const doTraverseAST = f => node => {
   switch (node.type) {
     case BINOP_TYPE:
-      const newA = traverseAST(handlers)(node.a);
-      const newB = traverseAST(handlers)(node.b);
+      const newA = doTraverseAST(f)(node.a);
+      const newB = doTraverseAST(f)(node.b);
       const newOp =
         newA === node.a && newB === node.b ? node : binOp(node.op)(newA, newB);
-      return multiApplyIfMatches(handlers, newOp);
+      return f(newOp);
     case VALUE_TYPE:
-      return multiApplyIfMatches(handlers, node);
+      return f(node);
     default:
       throw new Error("Unsupported type!");
   }
 };
+
+const singleTraverseAST = handler =>
+  doTraverseAST(node => applyIfMatches(handler, node));
+
+const traverseAST = handlers =>
+  doTraverseAST(node => multiApplyIfMatches(handlers, node));
+
+// Some example predicates (used below)
 
 const isNum = node => node.type === VALUE_TYPE;
 
