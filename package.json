@@ -1,0 +1,16 @@
+{
+  "name": "ast-matchers",
+  "version": "1.0.0",
+  "description": "AST matchers prototype",
+  "main": "index.js",
+  "author": "Luc Tielen <luc.tielen@kabisa.nl>",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "yarn mocha tests/"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^6.1.3"
+  }
+}
