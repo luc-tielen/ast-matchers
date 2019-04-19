@@ -1,8 +1,11 @@
 const path = require("path");
-const { andMatch, orMatch, inverseMatch, ALWAYS } = require(path.resolve(
-  __dirname,
-  "../src/index.js"
-));
+const {
+  andMatch,
+  orMatch,
+  inverseMatch,
+  ALWAYS,
+  matchWithin
+} = require("../src/index.js");
 const chai = require("chai");
 const expect = chai.expect;
 
@@ -28,18 +31,6 @@ const astToString = node => {
 
 // AST to experiment with
 const ast = mul(plus(num(1), num(2)), num(3));
-
-// Only checks 1 level directly below
-const matchWithin = p => node => {
-  switch (node.type) {
-    case BINOP_TYPE:
-      return p(node.a) || p(node.b);
-    case VALUE_TYPE:
-      return false;
-    default:
-      throw new Error("Unsupported type!");
-  }
-};
 
 // Applying transforms
 
