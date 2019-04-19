@@ -1,5 +1,11 @@
 const path = require("path");
-const { andMatch, orMatch, inverseMatch, ALWAYS } = require("../src/index.js");
+const {
+  andMatch,
+  orMatch,
+  inverseMatch,
+  ALWAYS,
+  PredicateBuilder
+} = require(path.resolve(__dirname, "../src/index.js"));
 const chai = require("chai");
 const expect = chai.expect;
 
@@ -177,6 +183,64 @@ describe("AST matchers", () => {
       ];
       const result = traverseAST(matchers)(ast);
       expect(astToString(result)).to.eql("1 + -1 * -1");
+    });
+  });
+
+  context("Predicate builder", () => {
+    it("starts with a predicate that matches every node if nothing specified", () => {
+      const transform = node => {
+        switch (node.type) {
+          case BINOP_TYPE:
+            return binOp(node.op)(node.b, node.a);
+          case VALUE_TYPE:
+            return num(-node.value);
+        }
+      };
+      const matcher = new PredicateBuilder().build();
+      const result = singleTraverseAST({ matcher, transform })(ast);
+      expect(astToString(result)).to.eql("-3 * -2 + -1");
+    });
+
+    it("returns predicate after calling build", () => {
+      const has2 = new PredicateBuilder(hasValue(2)).build();
+      const transform = node => num(node.value + 1);
+      const result = singleTraverseAST({ matcher: has2, transform })(ast);
+      expect(astToString(result)).to.eql("1 + 3 * 3");
+    });
+
+    it("is possible to chain predicates using 'and'", () => {
+      const binOpWithVal1And2 = new PredicateBuilder(isBinOp)
+        .and(matchWithin(hasValue(1)))
+        .and(matchWithin(hasValue(2)))
+        .build();
+      const transform = node => num(node.a.value * 4);
+      const result = singleTraverseAST({
+        matcher: binOpWithVal1And2,
+        transform
+      })(ast);
+      expect(astToString(result)).to.eql("4 * 3");
+    });
+
+    it("is possible to chain predicates using 'or'", () => {
+      const binOpWithVal2Or3 = new PredicateBuilder(isBinOp)
+        .or(matchWithin(hasValue(2)))
+        .or(matchWithin(hasValue(3)))
+        .build();
+      const transform = node => num(node.a.value * 4);
+      const result = singleTraverseAST({
+        matcher: binOpWithVal2Or3,
+        transform
+      })(ast);
+      expect(astToString(result)).to.eql("16");
+    });
+
+    it("is possible to chain predicates using 'inverse'", () => {
+      const hasNot2 = new PredicateBuilder(isNum)
+        .and(new PredicateBuilder(hasValue(2)).inverse().build())
+        .build();
+      const transform = node => num(node.value + 1);
+      const result = singleTraverseAST({ matcher: hasNot2, transform })(ast);
+      expect(astToString(result)).to.eql("2 + 2 * 4");
     });
   });
 });
