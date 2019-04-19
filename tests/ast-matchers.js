@@ -1,3 +1,8 @@
+const path = require("path");
+const { andMatch, orMatch, inverseMatch, ALWAYS } = require(path.resolve(
+  __dirname,
+  "../src/index.js"
+));
 const chai = require("chai");
 const expect = chai.expect;
 
@@ -23,12 +28,6 @@ const astToString = node => {
 
 // AST to experiment with
 const ast = mul(plus(num(1), num(2)), num(3));
-
-// Predicate combinators
-const andMatch = (p1, p2) => node => p1(node) && p2(node);
-const orMatch = (p1, p2) => node => p1(node) || p2(node);
-const inverseMatch = p => node => !p(node);
-const ALWAYS = () => true;
 
 // Only checks 1 level directly below
 const matchWithin = p => node => {
